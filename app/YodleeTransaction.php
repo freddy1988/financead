@@ -29,6 +29,7 @@ class YodleeTransaction extends Model
 		"runningBalance",
 		"highLevelCategoryId",
 		"tenancy_id",
+        "pay_type"
     ];
 
     public function getParsedStatus()

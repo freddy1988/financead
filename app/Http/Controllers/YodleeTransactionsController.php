@@ -73,46 +73,81 @@ class YodleeTransactionsController extends Controller
 
         $yodlees = json_decode($res3);
 
-        print_r($yodlees);
+        if ($yodlees)
+            foreach ($yodlees->transaction as $key => $yodlee) {
+                $tenancy_id = Tenancy::query()->select('id')
+                    ->where("property_full_address", "LIKE", "%" . $yodlee->description->original . "%")
+                    ->orWhereRaw("? LIKE concat('%',rent_payment_reference,'%')", $yodlee->description->original)
+                    ->orWhereRaw("? LIKE concat('%',deposit_payment_reference,'%')", $yodlee->description->original)
+                    ->orWhereRaw("? LIKE concat('%',holding_deposit_payment_reference,'%')", $yodlee->description->original)
+                    ->orWhereRaw("? LIKE concat('%',REPLACE(rent_payment_reference, '-', ''),'%')", $yodlee->description->original)
+                    ->orWhereRaw("? LIKE concat('%',REPLACE(deposit_payment_reference, '-', ''),'%')", $yodlee->description->original)
+                    ->orWhereRaw("? LIKE concat('%',REPLACE(holding_deposit_payment_reference, '-', ''),'%')", $yodlee->description->original)
+                    ->first();
 
-        /*foreach ($yodlees->transaction as  $key => $yodlee) {
+                $db_yodlee = YodleeTransaction::UpdateOrcreate(
+                    ["id" => $yodlee->id],
+                    [
+                        "container" => $yodlee->CONTAINER,
+                        "amount" => json_encode($yodlee->amount),
+                        "baseType" => $yodlee->baseType,
+                        "categoryType" => $yodlee->categoryType,
+                        "categoryId" => $yodlee->categoryId,
+                        "category" => $yodlee->category,
+                        "categorySource" => $yodlee->categorySource,
+                        "createdDate" => $yodlee->createdDate,
+                        "lastUpdated" => $yodlee->lastUpdated,
+                        "description" => $yodlee->description->original,
+                        "type" => $yodlee->type,
+                        "subType" => $yodlee->subType,
+                        "isManual" => $yodlee->isManual,
+                        "date" => $yodlee->date,
+                        "transactionDate" => $yodlee->transactionDate,
+                        "postDate" => $yodlee->postDate,
+                        "status" => $yodlee->status,
+                        "accountId" => $yodlee->accountId,
+                        "runningBalance" => json_encode($yodlee->runningBalance),
+                        "highLevelCategoryId" => $yodlee->highLevelCategoryId,
+                        "tenancy_id" => $tenancy_id ? $tenancy_id->id : null,
+                    ]
+                );
+            }
 
-            $tenancy_id = Tenancy::select('id')
-            ->WhereRaw("? LIKE concat('%',rent_payment_reference,'%')", $yodlee->description->original)
-            ->orWhereRaw("? LIKE concat('%',deposit_payment_reference,'%')", $yodlee->description->original)
-            ->orWhereRaw("? LIKE concat('%',holding_deposit_payment_reference,'%')", $yodlee->description->original)
-            ->orWhereRaw("? LIKE concat('%',REPLACE(rent_payment_reference, '-', ''),'%')", $yodlee->description->original)
-            ->orWhereRaw("? LIKE concat('%',REPLACE(deposit_payment_reference, '-', ''),'%')", $yodlee->description->original)
-            ->orWhereRaw("? LIKE concat('%',REPLACE(holding_deposit_payment_reference, '-', ''),'%')", $yodlee->description->original)
-            ->first();
+        $yodlees = YodleeTransaction::query()
+            ->whereNotNull("tenancy_id")
+            ->whereNull("pay_type")
+            ->with("tenancy")
+            ->get();
 
-            $db_yodlee = YodleeTransaction::UpdateOrcreate(
-				[	"id"  => $yodlee->id],
-		        [
-		          	"container" => $yodlee->CONTAINER,
-		          	"amount" => json_encode ($yodlee->amount),
-					"baseType" => $yodlee->baseType,
-					"categoryType" => $yodlee->categoryType,
-					"categoryId" => $yodlee->categoryId,
-					"category" => $yodlee->category,
-					"categorySource" => $yodlee->categorySource,
-					"createdDate" => $yodlee->createdDate,
-					"lastUpdated" => $yodlee->lastUpdated,
-					"description" => $yodlee->description->original,
-					"type" => $yodlee->type,
-					"subType" => $yodlee->subType,
-					"isManual" => $yodlee->isManual,
-					"date" => $yodlee->date,
-					"transactionDate" => $yodlee->transactionDate,
-					"postDate" => $yodlee->postDate,
-					"status" => $yodlee->status,
-					"accountId" => $yodlee->accountId,
-					"runningBalance" => json_encode ($yodlee->runningBalance),
-					"highLevelCategoryId" => $yodlee->highLevelCategoryId,
-                    "tenancy_id" => $tenancy_id ? $tenancy_id->id : null
-		        ]
-		     );
-	    }*/
-	    return view('admin.refresh');
+        $fields = ["property_full_address",
+            "rent_payment_reference",
+            "deposit_payment_reference",
+            "holding_deposit_payment_reference"];
+
+        foreach ($yodlees as $yodlee) {
+            $tenancy = $yodlee->tenancy;
+            if ($tenancy)
+                foreach ($fields as $field) {
+                    $value = strtolower($tenancy["$field"]);
+
+                    if (!$value){
+                        continue;
+                    }
+                    $description = strtolower($yodlee->description);
+                    for ($i = 0; $i < 2; $i++) {
+                        if (strpos($description, $value)) {
+                            $yodlee->pay_type = $field;
+                            break;
+                        }
+                        $value = str_replace("-", "", $value);
+                    }
+                }
+            if (!$yodlee->pay_type) {
+                $yodlee->pay_type = "Manual";
+            }
+            $yodlee->update();
+
+        }
+        return view('admin.refresh');
     }
 }
