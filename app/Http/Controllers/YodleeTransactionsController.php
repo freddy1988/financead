@@ -113,7 +113,13 @@ class YodleeTransactionsController extends Controller
                 );
             }
 
-        $yodlees = YodleeTransaction::query()
+        return $this->localRefresh();
+    }
+
+
+    public function localRefresh(){
+
+        $collection = YodleeTransaction::query()
             ->whereNotNull("tenancy_id")
             ->whereNull("pay_type")
             ->with("tenancy")
@@ -124,28 +130,30 @@ class YodleeTransactionsController extends Controller
             "deposit_payment_reference",
             "holding_deposit_payment_reference"];
 
-        foreach ($yodlees as $yodlee) {
-            $tenancy = $yodlee->tenancy;
+        foreach ($collection as $item) {
+            $tenancy = $item->tenancy;
             if ($tenancy)
                 foreach ($fields as $field) {
                     $value = strtolower($tenancy["$field"]);
-
-                    if (!$value){
+                    if (!$value||empty($value)) {
                         continue;
                     }
-                    $description = strtolower($yodlee->description);
+                    $description = strtolower($item->description);
+                    if (!$description||empty($description)) {
+                        continue;
+                    }
                     for ($i = 0; $i < 2; $i++) {
-                        if (strpos($description, $value)) {
-                            $yodlee->pay_type = $field;
+                        if (strpos($description, $value)||strpos( $value,$description)) {
+                            $item->pay_type = $field;
                             break;
                         }
                         $value = str_replace("-", "", $value);
                     }
                 }
-            if (!$yodlee->pay_type) {
-                $yodlee->pay_type = "Manual";
+            if (!$item->pay_type) {
+                $item->pay_type = "Manual";
             }
-            $yodlee->update();
+            $item->update();
 
         }
         return view('admin.refresh');

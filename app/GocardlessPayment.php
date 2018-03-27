@@ -21,6 +21,7 @@ class GocardlessPayment extends Model
         'reference',
         'status',
         'tenancy_id',
+        'pay_type'
     ];
 
     public function getParsedStatus()

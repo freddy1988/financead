@@ -109,14 +109,19 @@ class GoCardLessController extends Controller
 
         foreach ($all_payments as $payment) {
             $tenancy_id = null;
+            $payType=null;
             if($payment->description){
                 $tenancy_id = Tenancy::select('id')
                 ->where('property_full_address', 'LIKE', '%'.$payment->description.'%')
-                ->first();      
+                ->first();
+                if($tenancy_id)
+                    $payType="description";
             }
             if((!empty($payment->links->subscription))&&($tenancy_id==null)){
                 $susc = GocardlessSubscription::select('id','metadata')->where('id',$payment->links->subscription)->first();
                 $tenancy_id = Tenancy::select('id')->WhereRaw("? LIKE concat('%',rent_payment_reference,'%')", $susc->metadata)->first();
+                if($tenancy_id)
+                    $payType="links";
             }
             $db_gocardless_payments = GocardlessPayment::UpdateOrcreate(
                 [   "id"  => $payment->id],
@@ -132,9 +137,65 @@ class GoCardLessController extends Controller
                     'metadata' => json_encode ($payment->metadata),
                     'reference' => $payment->reference,
                     'status' => $payment->status,
-                    'tenancy_id' => $tenancy_id ? $tenancy_id->id : null
-                ] 
+                    'tenancy_id' => $tenancy_id ? $tenancy_id->id : null,
+                    'pay_type' => $payType
+                ]
              );
+        }
+
+
+        return $this->localRefresh();
+    }
+
+    public function localRefresh(){
+
+        $collection = GocardlessPayment::query()
+            ->whereNotNull("tenancy_id")
+            ->whereNull("pay_type")
+            ->with("tenancy")
+            ->get();
+
+        $fields = ["property_full_address",
+            ];
+
+        foreach ($collection as $item) {
+            $tenancy = $item->tenancy;
+            if ($tenancy){
+                foreach ($fields as $field) {
+                    $value = strtolower($tenancy["$field"]);
+                    if (!$value||empty($value)) {
+                        continue;
+                    }
+                    $description = strtolower($item->description);
+                    if (!$description||empty($description)) {
+                        continue;
+                    }
+                    for ($i = 0; $i < 2; $i++) {
+                        try{
+
+                            if (strpos($description, $value) || strpos($value, $description)) {
+                                $item->pay_type = $field;
+                                break;
+                            }
+                        }catch (\Exception $exception){
+                            dd($description,$value,$item,$tenancy);
+                        }
+                        $value = str_replace("-", "", $value);
+                    }
+                }
+                if (!$item->pay_type && !empty($item->links)){
+                    $susc = GocardlessSubscription::select('id','metadata')->where('id',$item->links)->first();
+                    $tenancy_id = Tenancy::select('id')->WhereRaw("? LIKE concat('%',rent_payment_reference,'%')", $susc->metadata)->first();
+                    if($tenancy_id)
+                        $item->pay_type="links";
+                }
+            }
+
+            if (!$item->pay_type) {
+                $item->pay_type = "Manual";
+            }
+            $item->update();
+
         }
         return view('admin.refresh');
     }
