@@ -68,6 +68,7 @@
                                             <th>@lang('dictionary.origin')</th>
                                             <th>@lang('dictionary.date')</th>
                                             <th>@lang('dictionary.status')</th>
+                                            <th>@lang('dictionary.payType')</th>
                                             <th>@lang('dictionary.delete')</th>
                                             <th class="hide"></th>
                                         </tr>
@@ -80,6 +81,7 @@
                                                 <td>{{ $transaction['origin'] }}</td>
                                                 <td>{{ $transaction['date'] }}</td>
                                                 <td>{{ $transaction['status'] }}</td>
+                                                <td> {{$transaction['pay_type']}} </td>
                                                 <td class="text-center">
 
                                                     {!! Form::open(['method' => 'post', 'route' => [ $transaction['origin'].'.deleteTenancy', $transaction['id'] ], 'data-confirm' => trans('messages.confirm'), 'data-title' => trans('messages.confirm-title'), 'data-type' => 'warning']) !!}
@@ -174,8 +176,8 @@
             dom: '<"#table-top.datatable-top"lf<"filter-bar">>rtpi',
             initComplete: function (e) {
                 addBtnFilter($('#table-top'), this.api(), [
-                    {column: 6, value: "No", title: "Regular Payments"},
-                    {column: 6, value: "Yes", title: "Deposit Balance Payments"}
+                    {column: 7, value: "No", title: "Regular Payments"},
+                    {column: 7, value: "Yes", title: "Deposit Balance Payments"}
                 ]);
             }
         });

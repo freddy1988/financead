@@ -48,7 +48,7 @@ class YodleeTransactionsController extends Controller
     }
     public function refresh(){
     	$client = new GuzzleClient();
-        $res = $client->post(getenv('YODLEEAPI_URL').'/v1/cobrand/login', 
+        $res = $client->post(getenv('YODLEEAPI_URL').'/v1/cobrand/login',
         ['json' => ["cobrand" => [
             'cobrandLogin' => getenv('YODLEEAPI_COBRAND_LOGIN'),
             'cobrandPassword' => getenv('YODLEEAPI_COBRAND_PASSWORD'),
@@ -151,7 +151,7 @@ class YodleeTransactionsController extends Controller
                     }
                 }
             if (!$item->pay_type) {
-                $item->pay_type = "Manual";
+                $item->pay_type = "manual";
             }
             $item->update();
 

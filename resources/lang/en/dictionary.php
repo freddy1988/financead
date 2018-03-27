@@ -43,6 +43,7 @@ return [
     'tenancy.balance' => 'Balance',
     'status' => 'Status',
     'paid' => 'Paid',
+    'payType' => 'Pay type',
     'landlord' => 'Landlord',
     'tenancy.fiscal' => 'List of rents status',
     'tenancy.day_to_pay' => 'All that have to pay the ',

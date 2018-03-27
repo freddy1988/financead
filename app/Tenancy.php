@@ -100,7 +100,8 @@ class Tenancy extends Model
                 'date' => $payment->date,
                 'origin' => "Yodlee",
                 'status' => "success",
-                'isDeposit'=>$payment->isDeposit()
+                'isDeposit'=>$payment->isDeposit(),
+                'pay_type'=>$payment->pay_type
             ];
         }
         foreach ($payments_gocardless as $payment){
@@ -111,7 +112,8 @@ class Tenancy extends Model
                 'date' => $payment->charge_date,
                 'origin' => "GoCardLess",
                 'status' => $payment->getParsedStatus(),
-                'isDeposit'=>$payment->isDeposit()
+                'isDeposit'=>$payment->isDeposit(),
+                'pay_type'=>$payment->pay_type
             ];
         }
         return $payments;

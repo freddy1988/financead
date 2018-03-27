@@ -115,13 +115,13 @@ class GoCardLessController extends Controller
                 ->where('property_full_address', 'LIKE', '%'.$payment->description.'%')
                 ->first();
                 if($tenancy_id)
-                    $payType="description";
+                    $payType="property_full_address";
             }
             if((!empty($payment->links->subscription))&&($tenancy_id==null)){
                 $susc = GocardlessSubscription::select('id','metadata')->where('id',$payment->links->subscription)->first();
                 $tenancy_id = Tenancy::select('id')->WhereRaw("? LIKE concat('%',rent_payment_reference,'%')", $susc->metadata)->first();
                 if($tenancy_id)
-                    $payType="links";
+                    $payType="subscription";
             }
             $db_gocardless_payments = GocardlessPayment::UpdateOrcreate(
                 [   "id"  => $payment->id],
@@ -187,12 +187,12 @@ class GoCardLessController extends Controller
                     $susc = GocardlessSubscription::select('id','metadata')->where('id',$item->links)->first();
                     $tenancy_id = Tenancy::select('id')->WhereRaw("? LIKE concat('%',rent_payment_reference,'%')", $susc->metadata)->first();
                     if($tenancy_id)
-                        $item->pay_type="links";
+                        $item->pay_type="subscription";
                 }
             }
 
             if (!$item->pay_type) {
-                $item->pay_type = "Manual";
+                $item->pay_type = "manual";
             }
             $item->update();
 
