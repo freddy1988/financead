@@ -37,6 +37,8 @@ class Tenancy extends Model
         $balance = 0;
         $balance_permissive = 0;
         foreach ($payments as $payment) {
+            if($payment["isDeposit"])
+                continue;
             $paydate = Carbon::createFromTimestamp(strtotime($payment["date"]));
             if (
                 $paydate->timestamp >= $fiscal_start->timestamp &&
@@ -97,7 +99,8 @@ class Tenancy extends Model
                 'currency ' => json_decode($payment->amount)->currency,
                 'date' => $payment->date,
                 'origin' => "Yodlee",
-                'status' => "success"
+                'status' => "success",
+                'isDeposit'=>$payment->isDeposit()
             ];
         }
         foreach ($payments_gocardless as $payment){
@@ -107,7 +110,8 @@ class Tenancy extends Model
                 'currency ' => $payment->currency,
                 'date' => $payment->charge_date,
                 'origin' => "GoCardLess",
-                'status' => $payment->getParsedStatus()
+                'status' => $payment->getParsedStatus(),
+                'isDeposit'=>$payment->isDeposit()
             ];
         }
         return $payments;

@@ -63,5 +63,9 @@ class GocardlessPayment extends Model
     {
         return $this->belongsTo('App\Tenancy');
     }
+    public function isDeposit()
+    {
+        return false;
+    }
 
 }

@@ -69,6 +69,7 @@
                                             <th>@lang('dictionary.date')</th>
                                             <th>@lang('dictionary.status')</th>
                                             <th>@lang('dictionary.delete')</th>
+                                            <th class="hide"></th>
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -88,6 +89,7 @@
                                                                 class="fa fa-trash-o"></i></button>
                                                     {!! Form::close() !!}
                                                 </td>
+                                                <td class="hide"> {{ ($transaction['isDeposit']?'Yes':'No') }} </td>
                                             </tr>
                                         @endforeach
                                         </tbody>
@@ -168,7 +170,14 @@
 @push('scripts')
     <script type="text/javascript">
         $('#paymentsTenancy').dataTable({
-            "order": [[3, "desc"]],
+            order: [[3, "desc"]],
+            dom: '<"#table-top.datatable-top"lf<"filter-bar">>rtpi',
+            initComplete: function (e) {
+                addBtnFilter($('#table-top'), this.api(), [
+                    {column: 6, value: "No", title: "Regular Payments"},
+                    {column: 6, value: "Yes", title: "Deposit Balance Payments"}
+                ]);
+            }
         });
     </script>
 @endpush

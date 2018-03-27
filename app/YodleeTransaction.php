@@ -64,4 +64,8 @@ class YodleeTransaction extends Model
     {
         return $this->belongsTo('App\Tenancy');
     }
+
+    public function isDeposit(){
+        return $this->pay_type==="deposit_payment_reference";
+    }
 }
